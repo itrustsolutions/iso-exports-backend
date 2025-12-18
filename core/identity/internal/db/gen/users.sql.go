@@ -19,12 +19,9 @@ INSERT INTO users (
     password_hash,
     has_system_access,
     has_all_namespaces_access,
-    is_active,
-    failed_attempts_count,
-    created_at,
-    updated_at
+    is_active
 ) VALUES (
-    $1, $2, $3, $4, $5, $6, $7, $8, $9, $10
+    $1, $2, $3, $4, $5, $6, $7
 )
 RETURNING
     id,
@@ -33,10 +30,6 @@ RETURNING
     has_system_access,
     has_all_namespaces_access,
     is_active,
-    failed_attempts_count,
-    last_failed_attempt_at,
-    locked_until_at,
-    deleted_at,
     created_at,
     updated_at
 `
@@ -49,9 +42,6 @@ type CreateUserParams struct {
 	HasSystemAccess        bool
 	HasAllNamespacesAccess bool
 	IsActive               bool
-	FailedAttemptsCount    int32
-	CreatedAt              pgtype.Timestamptz
-	UpdatedAt              pgtype.Timestamptz
 }
 
 type CreateUserRow struct {
@@ -61,10 +51,6 @@ type CreateUserRow struct {
 	HasSystemAccess        bool
 	HasAllNamespacesAccess bool
 	IsActive               bool
-	FailedAttemptsCount    int32
-	LastFailedAttemptAt    pgtype.Timestamptz
-	LockedUntilAt          pgtype.Timestamptz
-	DeletedAt              pgtype.Timestamptz
 	CreatedAt              pgtype.Timestamptz
 	UpdatedAt              pgtype.Timestamptz
 }
@@ -78,9 +64,6 @@ func (q *Queries) CreateUser(ctx context.Context, arg CreateUserParams) (CreateU
 		arg.HasSystemAccess,
 		arg.HasAllNamespacesAccess,
 		arg.IsActive,
-		arg.FailedAttemptsCount,
-		arg.CreatedAt,
-		arg.UpdatedAt,
 	)
 	var i CreateUserRow
 	err := row.Scan(
@@ -90,10 +73,6 @@ func (q *Queries) CreateUser(ctx context.Context, arg CreateUserParams) (CreateU
 		&i.HasSystemAccess,
 		&i.HasAllNamespacesAccess,
 		&i.IsActive,
-		&i.FailedAttemptsCount,
-		&i.LastFailedAttemptAt,
-		&i.LockedUntilAt,
-		&i.DeletedAt,
 		&i.CreatedAt,
 		&i.UpdatedAt,
 	)

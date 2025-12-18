@@ -6,12 +6,9 @@ INSERT INTO users (
     password_hash,
     has_system_access,
     has_all_namespaces_access,
-    is_active,
-    failed_attempts_count,
-    created_at,
-    updated_at
+    is_active
 ) VALUES (
-    $1, $2, $3, $4, $5, $6, $7, $8, $9, $10
+    $1, $2, $3, $4, $5, $6, $7
 )
 RETURNING
     id,
@@ -20,9 +17,5 @@ RETURNING
     has_system_access,
     has_all_namespaces_access,
     is_active,
-    failed_attempts_count,
-    last_failed_attempt_at,
-    locked_until_at,
-    deleted_at,
     created_at,
     updated_at;
