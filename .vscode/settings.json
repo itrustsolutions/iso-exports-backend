@@ -2,14 +2,20 @@
   "cSpell.words": [
     "asaskevich",
     "businesserrors",
+    "customcontext",
     "customdberrors",
     "customerrors",
+    "dbname",
+    "DBTX",
     "errorscodes",
     "govalidator",
     "httputils",
     "itrustsolutions",
     "jackc",
     "pgconn",
-    "SQLSTATE"
+    "pgxpool",
+    "sqlc",
+    "SQLSTATE",
+    "sslmode"
   ]
 }

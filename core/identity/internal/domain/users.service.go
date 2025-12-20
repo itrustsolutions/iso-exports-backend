@@ -4,6 +4,7 @@ import (
 	"context"
 
 	db "github.com/itrustsolutions/iso-exports-backend/core/identity/internal/db/gen"
+	"github.com/itrustsolutions/iso-exports-backend/core/identity/internal/db/utils"
 	errorscodes "github.com/itrustsolutions/iso-exports-backend/core/identity/internal/errors"
 	businesserrors "github.com/itrustsolutions/iso-exports-backend/utils/errors/business"
 	customdberrors "github.com/itrustsolutions/iso-exports-backend/utils/errors/db"
@@ -21,6 +22,8 @@ func NewUsersService(queries *db.Queries) *UsersService {
 }
 
 func (s *UsersService) CreateUser(ctx context.Context, input *CreateUserInput) (*CreateUserResult, error) {
+	queries := utils.GetQueriesWithPossibleTx(ctx, s.queries)
+
 	hashedPassword, err := security.HashString(input.PlainPassword)
 	if err != nil {
 		return nil, businesserrors.NewBusinessError(
@@ -34,7 +37,7 @@ func (s *UsersService) CreateUser(ctx context.Context, input *CreateUserInput) (
 
 	newID := security.NewID()
 
-	result, err := s.queries.CreateUser(ctx, db.CreateUserParams{
+	result, err := queries.CreateUser(ctx, db.CreateUserParams{
 		ID:              newID,
 		Username:        input.Username,
 		Email:           input.Email,

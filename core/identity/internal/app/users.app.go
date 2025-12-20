@@ -4,14 +4,17 @@ import (
 	"context"
 
 	"github.com/itrustsolutions/iso-exports-backend/core/identity/internal/domain"
+	"github.com/itrustsolutions/iso-exports-backend/utils/common"
 )
 
 type UsersApp struct {
+	tXManager    *common.TXManager
 	usersService *domain.UsersService
 }
 
-func NewUsersApp(usersService *domain.UsersService) *UsersApp {
+func NewUsersApp(usersService *domain.UsersService, tXManager *common.TXManager) *UsersApp {
 	return &UsersApp{
+		tXManager:    tXManager,
 		usersService: usersService,
 	}
 }
@@ -23,7 +26,10 @@ func (a *UsersApp) CreateUser(ctx context.Context, input *CreateUserInput) (*Cre
 		return nil, err
 	}
 
-	result, err := a.usersService.CreateUser(ctx, &domain.CreateUserInput{
+	txCtx, tx, err := a.tXManager.Begin(ctx)
+	defer tx.Rollback(txCtx)
+
+	result, err := a.usersService.CreateUser(txCtx, &domain.CreateUserInput{
 		Username:        input.Username,
 		Email:           input.Email,
 		PlainPassword:   input.PlainPassword,
