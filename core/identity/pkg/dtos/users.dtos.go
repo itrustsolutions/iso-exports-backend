@@ -1,4 +1,4 @@
-package app
+package identitydtos
 
 import (
 	"time"

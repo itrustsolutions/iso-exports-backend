@@ -7,15 +7,18 @@
     "customerrors",
     "dbname",
     "DBTX",
+    "dtos",
     "errorscodes",
     "govalidator",
     "httputils",
+    "identitydtos",
     "itrustsolutions",
     "jackc",
     "pgconn",
     "pgxpool",
     "sqlc",
     "SQLSTATE",
-    "sslmode"
+    "sslmode",
+    "tracelog"
   ]
 }

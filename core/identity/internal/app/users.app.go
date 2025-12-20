@@ -4,7 +4,9 @@ import (
 	"context"
 
 	"github.com/itrustsolutions/iso-exports-backend/core/identity/internal/domain"
+	identitydtos "github.com/itrustsolutions/iso-exports-backend/core/identity/pkg/dtos"
 	"github.com/itrustsolutions/iso-exports-backend/utils/common"
+	businesserrors "github.com/itrustsolutions/iso-exports-backend/utils/errors/business"
 )
 
 type UsersApp struct {
@@ -19,7 +21,7 @@ func NewUsersApp(usersService *domain.UsersService, tXManager *common.TXManager)
 	}
 }
 
-func (a *UsersApp) CreateUser(ctx context.Context, input *CreateUserInput) (*CreateUserResult, error) {
+func (a *UsersApp) CreateUser(ctx context.Context, input *identitydtos.CreateUserInput) (*identitydtos.CreateUserResult, error) {
 	err := input.Validate()
 
 	if err != nil {
@@ -41,7 +43,18 @@ func (a *UsersApp) CreateUser(ctx context.Context, input *CreateUserInput) (*Cre
 		return nil, err
 	}
 
-	return &CreateUserResult{
+	err = tx.Commit(txCtx)
+	if err != nil {
+		return nil, businesserrors.NewBusinessError(
+			businesserrors.ErrCodeInternalError,
+			"Unexpected error while creating user",
+		).WithError(err).WithDetails(map[string]interface{}{
+			"username": input.Username,
+			"email":    input.Email,
+		})
+	}
+
+	return &identitydtos.CreateUserResult{
 		ID:                     result.ID,
 		Username:               result.Username,
 		Email:                  result.Email,

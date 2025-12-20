@@ -7,6 +7,7 @@ import (
 
 	"github.com/itrustsolutions/iso-exports-backend/cmd/internal/db"
 	"github.com/itrustsolutions/iso-exports-backend/core/identity"
+	identitydtos "github.com/itrustsolutions/iso-exports-backend/core/identity/pkg/dtos"
 )
 
 func main() {
@@ -19,7 +20,22 @@ func main() {
 	}
 	defer pool.Close()
 
-	identity.NewModule(&identity.Config{
+	identityModule := identity.NewModule(&identity.Config{
 		DB: pool,
 	})
+
+	user, err := identityModule.Users.CreateUser(ctx, &identitydtos.CreateUserInput{
+		Username:        "test",
+		Email:           "test@example.com",
+		PlainPassword:   "password",
+		IsActive:        true,
+		HasSystemAccess: true,
+	})
+
+	if err != nil {
+		fmt.Fprintln(os.Stderr, "Could not create user:", err)
+		os.Exit(1)
+	}
+
+	fmt.Println("Created user:", user)
 }
