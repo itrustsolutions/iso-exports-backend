@@ -20,7 +20,7 @@ func (e *BusinessError) Unwrap() error {
 	return e.Err
 }
 
-func NewBusinessError(code, message string) *BusinessError {
+func NewBusinessError(code string, message string) *BusinessError {
 	return &BusinessError{
 		Code:    code,
 		Message: message,

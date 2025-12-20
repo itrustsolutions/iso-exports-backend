@@ -8,6 +8,7 @@ import (
 	errorscodes "github.com/itrustsolutions/iso-exports-backend/core/identity/internal/errors"
 	businesserrors "github.com/itrustsolutions/iso-exports-backend/utils/errors/business"
 	customdberrors "github.com/itrustsolutions/iso-exports-backend/utils/errors/db"
+	"github.com/itrustsolutions/iso-exports-backend/utils/errors/technical"
 	"github.com/itrustsolutions/iso-exports-backend/utils/security"
 )
 
@@ -26,13 +27,10 @@ func (s *UsersService) CreateUser(ctx context.Context, input *CreateUserInput) (
 
 	hashedPassword, err := security.HashString(input.PlainPassword)
 	if err != nil {
-		return nil, businesserrors.NewBusinessError(
-			businesserrors.ErrCodeInternalError,
-			"Failed to process password",
-		).WithError(err).WithDetails(map[string]interface{}{
-			"username": input.Username,
-			"email":    input.Email,
-		})
+		return nil, technical.NewTechnicalError(
+			technical.ErrCodeHashingPasswordFailed,
+			"Failed to hash user password",
+		).WithError(err)
 	}
 
 	newID := security.NewID()
@@ -49,37 +47,33 @@ func (s *UsersService) CreateUser(ctx context.Context, input *CreateUserInput) (
 	if err != nil {
 		pgErr := customdberrors.GetPgError(err)
 
-		if pgErr == nil { // Non-DB error return a generic internal error
-			return nil, businesserrors.NewBusinessError(
-				businesserrors.ErrCodeInternalError,
-				"Unexpected error while creating user",
-			).WithError(err).WithDetails(map[string]interface{}{
-				"username": input.Username,
-				"email":    input.Email,
-			})
-		}
-
-		mappedErr := customdberrors.MapPostgresError(err)
-
-		switch mappedErr {
-		case customdberrors.ErrDBUniqueViolation:
-			switch pgErr.ConstraintName {
-			case "uq_users_username":
-				return nil, businesserrors.NewBusinessError(
-					errorscodes.ErrCodeUserWithUsernameExists,
-					"Username already exists",
-				).WithError(err).WithDetails(map[string]interface{}{
-					"username": input.Username,
-				})
-			case "uq_users_email":
-				return nil, businesserrors.NewBusinessError(
-					errorscodes.ErrCodeUserWithEmailExists,
-					"Email already exists",
-				).WithError(err).WithDetails(map[string]interface{}{
-					"email": input.Email,
-				})
+		if pgErr != nil {
+			switch customdberrors.MapPostgresError(err) {
+			case customdberrors.ErrDBUniqueViolation:
+				switch pgErr.ConstraintName {
+				case "uq_users_username":
+					return nil, businesserrors.NewBusinessError(
+						errorscodes.ErrCodeUserWithUsernameExists,
+						"Username already exists",
+					).WithError(err).WithDetails(map[string]interface{}{
+						"username": input.Username,
+					})
+				case "uq_users_email":
+					return nil, businesserrors.NewBusinessError(
+						errorscodes.ErrCodeUserWithEmailExists,
+						"Email already exists",
+					).WithError(err).WithDetails(map[string]interface{}{
+						"email": input.Email,
+					})
+				}
 			}
 		}
+
+		// Non-DB error return a generic internal error
+		return nil, technical.NewTechnicalError(
+			technical.ErrCodeDatabaseOperationFailed,
+			"Failed to create user in database",
+		).WithError(err)
 	}
 
 	return &CreateUserResult{
