@@ -1,4 +1,4 @@
-package customdberrors
+package dberrors
 
 import (
 	"errors"
@@ -9,24 +9,24 @@ import (
 // Map of PostgreSQL error codes (SQLSTATE) to custom DB errors
 var pgCodeToDBError = map[string]error{
 	// Constraint violations
-	"23505": ErrDBUniqueViolation,     // unique_violation
-	"23503": ErrDBForeignKeyViolation, // foreign_key_violation
-	"23502": ErrDBNotNullViolation,    // not_null_violation
-	"23514": ErrDBCheckViolation,      // check_violation
-	"23P01": ErrDBExclusionViolation,  // exclusion_violation
+	"23505": ErrUniqueViolation,     // unique_violation
+	"23503": ErrForeignKeyViolation, // foreign_key_violation
+	"23502": ErrNotNullViolation,    // not_null_violation
+	"23514": ErrCheckViolation,      // check_violation
+	"23P01": ErrExclusionViolation,  // exclusion_violation
 
 	// Serialization / concurrency
-	"40001": ErrDBSerializationFailure, // serialization_failure
-	"40P01": ErrDBDeadlockDetected,     // deadlock_detected
+	"40001": ErrSerializationFailure, // serialization_failure
+	"40P01": ErrDeadlockDetected,     // deadlock_detected
 
 	// Syntax / schema errors
-	"42601": ErrDBSyntaxError,               // syntax_error
-	"42P01": ErrDBUndefinedTable,            // undefined_table
-	"42703": ErrDBUndefinedColumn,           // undefined_column
-	"22P02": ErrDBInvalidTextRepresentation, // invalid_text_representation
-	"22007": ErrDBInvalidDatetimeFormat,     // invalid_datetime_format
-	"53000": ErrDBTooManyConnections,        // too_many_connections
-	"22012": ErrDBDivisionByZero,            // division_by_zero
+	"42601": ErrSyntaxError,               // syntax_error
+	"42P01": ErrUndefinedTable,            // undefined_table
+	"42703": ErrUndefinedColumn,           // undefined_column
+	"22P02": ErrInvalidTextRepresentation, // invalid_text_representation
+	"22007": ErrInvalidDatetimeFormat,     // invalid_datetime_format
+	"53000": ErrTooManyConnections,        // too_many_connections
+	"22012": ErrDivisionByZero,            // division_by_zero
 }
 
 // MapPostgresError maps a pgx/pgconn error to your custom DB error.
@@ -36,7 +36,7 @@ func MapPostgresError(err error) error {
 		if mappedErr, ok := pgCodeToDBError[pgErr.Code]; ok {
 			return mappedErr
 		}
-		return ErrDBUnknown // fallback for unknown codes
+		return ErrUnknown // fallback for unknown codes
 	}
 	return err // not a pg error, return as-is
 }

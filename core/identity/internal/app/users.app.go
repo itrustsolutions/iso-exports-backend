@@ -6,7 +6,7 @@ import (
 	"github.com/itrustsolutions/iso-exports-backend/core/identity/internal/domain"
 	identitydtos "github.com/itrustsolutions/iso-exports-backend/core/identity/pkg/dtos"
 	"github.com/itrustsolutions/iso-exports-backend/utils/common"
-	"github.com/itrustsolutions/iso-exports-backend/utils/errors/technical"
+	technicalerrors "github.com/itrustsolutions/iso-exports-backend/utils/errors/technical"
 )
 
 type UsersApp struct {
@@ -45,8 +45,8 @@ func (a *UsersApp) CreateUser(ctx context.Context, input *identitydtos.CreateUse
 
 	err = tx.Commit(txCtx)
 	if err != nil {
-		return nil, technical.NewTechnicalError(
-			technical.ErrCodeTransactionFailed,
+		return nil, technicalerrors.NewTechnicalError(
+			technicalerrors.ErrCodeTransactionFailed,
 			"Failed to commit transaction for creating user",
 		).WithError(err)
 	}

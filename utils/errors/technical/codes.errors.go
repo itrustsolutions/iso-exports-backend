@@ -1,4 +1,4 @@
-package technical
+package technicalerrors
 
 const (
 	ErrCodeHashingPasswordFailed   = "HASHING_PASSWORD_FAILED"

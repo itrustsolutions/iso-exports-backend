@@ -5,6 +5,7 @@
     "customcontext",
     "customdberrors",
     "customerrors",
+    "dberrors",
     "dbname",
     "DBTX",
     "dtos",
@@ -19,6 +20,7 @@
     "sqlc",
     "SQLSTATE",
     "sslmode",
+    "technicalerrors",
     "tracelog"
   ]
 }

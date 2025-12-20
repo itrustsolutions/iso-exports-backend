@@ -8,7 +8,7 @@ import (
 	errorscodes "github.com/itrustsolutions/iso-exports-backend/core/identity/internal/errors"
 	businesserrors "github.com/itrustsolutions/iso-exports-backend/utils/errors/business"
 	customdberrors "github.com/itrustsolutions/iso-exports-backend/utils/errors/db"
-	"github.com/itrustsolutions/iso-exports-backend/utils/errors/technical"
+	technicalerrors "github.com/itrustsolutions/iso-exports-backend/utils/errors/technical"
 	"github.com/itrustsolutions/iso-exports-backend/utils/security"
 )
 
@@ -27,8 +27,8 @@ func (s *UsersService) CreateUser(ctx context.Context, input *CreateUserInput) (
 
 	hashedPassword, err := security.HashString(input.PlainPassword)
 	if err != nil {
-		return nil, technical.NewTechnicalError(
-			technical.ErrCodeHashingPasswordFailed,
+		return nil, technicalerrors.NewTechnicalError(
+			technicalerrors.ErrCodeHashingPasswordFailed,
 			"Failed to hash user password",
 		).WithError(err)
 	}
@@ -49,7 +49,7 @@ func (s *UsersService) CreateUser(ctx context.Context, input *CreateUserInput) (
 
 		if pgErr != nil {
 			switch customdberrors.MapPostgresError(err) {
-			case customdberrors.ErrDBUniqueViolation:
+			case customdberrors.ErrUniqueViolation:
 				switch pgErr.ConstraintName {
 				case "uq_users_username":
 					return nil, businesserrors.NewBusinessError(
@@ -70,8 +70,8 @@ func (s *UsersService) CreateUser(ctx context.Context, input *CreateUserInput) (
 		}
 
 		// Non-DB error return a generic internal error
-		return nil, technical.NewTechnicalError(
-			technical.ErrCodeDatabaseOperationFailed,
+		return nil, technicalerrors.NewTechnicalError(
+			technicalerrors.ErrCodeDatabaseOperationFailed,
 			"Failed to create user in database",
 		).WithError(err)
 	}

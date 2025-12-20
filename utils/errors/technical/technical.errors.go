@@ -1,4 +1,4 @@
-package technical
+package technicalerrors
 
 import "fmt"
 
