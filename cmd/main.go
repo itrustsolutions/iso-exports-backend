@@ -8,6 +8,7 @@ import (
 	application "github.com/itrustsolutions/iso-exports-backend/cmd/internal"
 	"github.com/itrustsolutions/iso-exports-backend/core/identity"
 	identitydtos "github.com/itrustsolutions/iso-exports-backend/core/identity/pkg/dtos"
+	"github.com/itrustsolutions/iso-exports-backend/utils/db"
 )
 
 func main() {
@@ -24,12 +25,14 @@ func main() {
 		DB: pool,
 	})
 
-	user, err := identityModule.Users.CreateUser(ctx, &identitydtos.CreateUserInput{
-		Username:        "test",
-		Email:           "test@example.com",
-		PlainPassword:   "password",
-		IsActive:        true,
-		HasSystemAccess: true,
+	user, err := db.ExecWithinTx(ctx, pool, func(txCtx context.Context) (*identitydtos.CreateUserResult, error) {
+		return identityModule.Users.CreateUser(ctx, &identitydtos.CreateUserInput{
+			Username:        "test",
+			Email:           "test@example.com",
+			PlainPassword:   "password",
+			IsActive:        true,
+			HasSystemAccess: true,
+		})
 	})
 
 	if err != nil {

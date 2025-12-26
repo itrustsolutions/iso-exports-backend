@@ -17,10 +17,17 @@ tasks:
   migrate:up:
     desc: Runs all migrations using variables from local env variables
     cmds:
+      - echo "Running core/identity migrations..."
       - goose -dir core/identity/internal/db/migrations postgres "{{.DB_URL}}" up
 
   migrate:down:
+    desc: Rolls back the last migration using variables from local env variables
+    cmds:
+      - echo "Rollback core/identity last applied migration..."
+      - goose -dir core/identity/internal/db/migrations postgres "{{.DB_URL}}" down
+
+  migrate:reset:
     desc: Rolls back all the migrations using variables from local env variables
     cmds:
-      - echo "Running core/identity migrations..."
-      - goose -dir core/identity/internal/db/migrations postgres "{{.DB_URL}}" down
+      - echo "Resetting core/identity all migrations..."
+      - goose -dir core/identity/internal/db/migrations postgres "{{.DB_URL}}" reset

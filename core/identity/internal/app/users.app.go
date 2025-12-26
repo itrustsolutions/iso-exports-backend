@@ -6,7 +6,6 @@ import (
 	"github.com/itrustsolutions/iso-exports-backend/core/identity/internal/domain"
 	identitydtos "github.com/itrustsolutions/iso-exports-backend/core/identity/pkg/dtos"
 	"github.com/itrustsolutions/iso-exports-backend/utils/common"
-	technicalerrors "github.com/itrustsolutions/iso-exports-backend/utils/errors/technical"
 )
 
 type UsersApp struct {
@@ -14,9 +13,8 @@ type UsersApp struct {
 	usersService *domain.UsersService
 }
 
-func NewUsersApp(usersService *domain.UsersService, tXManager *common.TXManager) *UsersApp {
+func NewUsersApp(usersService *domain.UsersService) *UsersApp {
 	return &UsersApp{
-		tXManager:    tXManager,
 		usersService: usersService,
 	}
 }
@@ -28,10 +26,7 @@ func (a *UsersApp) CreateUser(ctx context.Context, input *identitydtos.CreateUse
 		return nil, err
 	}
 
-	txCtx, tx, err := a.tXManager.Begin(ctx)
-	defer tx.Rollback(txCtx)
-
-	result, err := a.usersService.CreateUser(txCtx, &domain.CreateUserInput{
+	result, err := a.usersService.CreateUser(ctx, &domain.CreateUserInput{
 		Username:        input.Username,
 		Email:           input.Email,
 		PlainPassword:   input.PlainPassword,
@@ -41,14 +36,6 @@ func (a *UsersApp) CreateUser(ctx context.Context, input *identitydtos.CreateUse
 
 	if err != nil {
 		return nil, err
-	}
-
-	err = tx.Commit(txCtx)
-	if err != nil {
-		return nil, technicalerrors.NewTechnicalError(
-			technicalerrors.ErrCodeTransactionFailed,
-			"Failed to commit transaction for creating user",
-		).WithError(err)
 	}
 
 	return &identitydtos.CreateUserResult{

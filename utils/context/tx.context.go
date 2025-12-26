@@ -8,10 +8,14 @@ import (
 
 type TxKey struct{}
 
-// Extract retrieves the transaction or nil if none exists
+// Extracts the transaction from the context if exists or return nil
 func ExtractTx(ctx context.Context) pgx.Tx {
 	if tx, ok := ctx.Value(TxKey{}).(pgx.Tx); ok {
 		return tx
 	}
 	return nil
+}
+
+func WithTx(ctx context.Context, tx pgx.Tx) context.Context {
+	return context.WithValue(ctx, TxKey{}, tx)
 }

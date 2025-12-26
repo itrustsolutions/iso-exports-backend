@@ -4,7 +4,6 @@ import (
 	"github.com/itrustsolutions/iso-exports-backend/core/identity/internal/app"
 	db "github.com/itrustsolutions/iso-exports-backend/core/identity/internal/db/gen"
 	"github.com/itrustsolutions/iso-exports-backend/core/identity/internal/domain"
-	"github.com/itrustsolutions/iso-exports-backend/utils/common"
 	"github.com/jackc/pgx/v5/pgxpool"
 )
 
@@ -19,10 +18,8 @@ type Config struct {
 func NewModule(cfg *Config) *Module {
 	queries := db.New(cfg.DB)
 
-	txManager := common.NewTXManager(cfg.DB)
-
 	usersService := domain.NewUsersService(queries)
-	usersApp := app.NewUsersApp(usersService, txManager)
+	usersApp := app.NewUsersApp(usersService)
 
 	return &Module{
 		Users: usersApp,
