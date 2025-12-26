@@ -4,6 +4,7 @@ go 1.25.4
 
 require (
 	github.com/asaskevich/govalidator v0.0.0-20230301143203-a9d515a09cc2
+	github.com/caarlos0/env/v11 v11.3.1
 	github.com/jackc/pgx/v5 v5.7.6
 	github.com/oklog/ulid/v2 v2.1.1
 	golang.org/x/crypto v0.37.0

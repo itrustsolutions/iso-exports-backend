@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"os"
 
-	"github.com/itrustsolutions/iso-exports-backend/cmd/internal/db"
+	application "github.com/itrustsolutions/iso-exports-backend/cmd/internal"
 	"github.com/itrustsolutions/iso-exports-backend/core/identity"
 	identitydtos "github.com/itrustsolutions/iso-exports-backend/core/identity/pkg/dtos"
 )
@@ -13,7 +13,7 @@ import (
 func main() {
 	ctx := context.Background()
 
-	pool, err := db.Setup(ctx)
+	pool, err := application.DbSetup(ctx)
 	if err != nil {
 		fmt.Fprintln(os.Stderr, "Could not set up database:", err)
 		os.Exit(1)

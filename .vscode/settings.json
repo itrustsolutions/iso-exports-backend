@@ -2,17 +2,20 @@
   "cSpell.words": [
     "asaskevich",
     "businesserrors",
+    "caarlos",
     "customcontext",
     "customdberrors",
     "customerrors",
     "dberrors",
     "dbname",
     "DBTX",
+    "dotenv",
     "dtos",
     "errorscodes",
     "govalidator",
     "httputils",
     "identitydtos",
+    "ITRUST",
     "itrustsolutions",
     "jackc",
     "pgconn",
@@ -21,6 +24,8 @@
     "SQLSTATE",
     "sslmode",
     "technicalerrors",
+    "testdata",
+    "tmpl",
     "tracelog"
   ]
 }

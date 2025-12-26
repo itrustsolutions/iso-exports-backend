@@ -1,0 +1,26 @@
+# yaml-language-server: $schema=https://taskfile.dev/schema.json
+
+version: "3"
+
+dotenv: [".local.env"]
+
+vars:
+  DB_URL: "postgres://{{.ITRUST_DB_USER}}:{{.ITRUST_DB_PASSWORD}}@{{.ITRUST_DB_HOST}}:{{.ITRUST_DB_PORT}}/{{.ITRUST_DB_NAME}}?sslmode={{.ITRUST_DB_SSLMODE}}"
+
+tasks:
+  local:run:
+    desc: Runs the application in development mode
+    cmds:
+      - air
+    silent: false
+
+  migrate:up:
+    desc: Runs all migrations using variables from local env variables
+    cmds:
+      - goose -dir core/identity/internal/db/migrations postgres "{{.DB_URL}}" up
+
+  migrate:down:
+    desc: Rolls back all the migrations using variables from local env variables
+    cmds:
+      - echo "Running core/identity migrations..."
+      - goose -dir core/identity/internal/db/migrations postgres "{{.DB_URL}}" down
