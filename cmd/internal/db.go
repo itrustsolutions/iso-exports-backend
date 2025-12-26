@@ -26,10 +26,6 @@ func DbSetup(ctx context.Context) (*pgxpool.Pool, error) {
 	// Create a connection pool
 	pool, err := pgxpool.New(ctx, dsn)
 	if err != nil {
-		if config.App.Env == "local" {
-			return nil, fmt.Errorf("Failed to create connection pool: %w", err)
-		}
-
 		return nil, fmt.Errorf("Failed to create connection pool")
 	}
 

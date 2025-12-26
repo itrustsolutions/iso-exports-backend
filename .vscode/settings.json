@@ -13,6 +13,7 @@
     "dtos",
     "errorscodes",
     "govalidator",
+    "httppresentation",
     "httputils",
     "identitydtos",
     "ITRUST",

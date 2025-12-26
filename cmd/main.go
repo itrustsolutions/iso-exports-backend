@@ -3,15 +3,19 @@ package main
 import (
 	"context"
 	"fmt"
+	"net/http"
 	"os"
 
+	"github.com/go-chi/chi/v5"
 	application "github.com/itrustsolutions/iso-exports-backend/cmd/internal"
 	"github.com/itrustsolutions/iso-exports-backend/core/identity"
-	identitydtos "github.com/itrustsolutions/iso-exports-backend/core/identity/pkg/dtos"
-	"github.com/itrustsolutions/iso-exports-backend/utils/db"
+	"github.com/itrustsolutions/iso-exports-backend/utils/config"
+	"github.com/itrustsolutions/iso-exports-backend/utils/middleware"
 )
 
 func main() {
+	config := config.GetConfigOrExist()
+
 	ctx := context.Background()
 
 	pool, err := application.DbSetup(ctx)
@@ -25,20 +29,13 @@ func main() {
 		DB: pool,
 	})
 
-	user, err := db.ExecWithinTx(ctx, pool, func(txCtx context.Context) (*identitydtos.CreateUserResult, error) {
-		return identityModule.Users.CreateUser(ctx, &identitydtos.CreateUserInput{
-			Username:        "test",
-			Email:           "test@example.com",
-			PlainPassword:   "password",
-			IsActive:        true,
-			HasSystemAccess: true,
-		})
-	})
+	r := chi.NewRouter()
 
-	if err != nil {
-		fmt.Fprintln(os.Stderr, "Could not create user:", err)
+	r.Use(middleware.CorrelationID)
+	r.Mount("/identity/users", identityModule.Routes)
+
+	if err := http.ListenAndServe(config.Server.Port, r); err != nil {
+		fmt.Fprintln(os.Stderr, "Could not set up HTTP server:", err)
 		os.Exit(1)
 	}
-
-	fmt.Println("Created user:", user)
 }
