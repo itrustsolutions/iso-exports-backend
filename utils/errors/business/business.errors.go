@@ -1,12 +1,15 @@
 package businesserrors
 
-import "fmt"
+import (
+	"fmt"
+)
 
 type BusinessError struct {
-	Code    string                 `json:"code"`
-	Message string                 `json:"message"`
-	Details map[string]interface{} `json:"details,omitempty"`
-	Err     error                  `json:"-"` // Underlying error, not exposed in JSON response
+	Code       string                 `json:"code"`
+	Message    string                 `json:"message"`
+	Details    map[string]interface{} `json:"details,omitempty"`
+	StatusCode int                    `json:"-"` // HTTP status code, not exposed in JSON response
+	Err        error                  `json:"-"` // Underlying error, not exposed in JSON response
 }
 
 func (e *BusinessError) Error() string {
@@ -47,4 +50,17 @@ func (e *BusinessError) WithDetails(details map[string]interface{}) *BusinessErr
 func (e *BusinessError) WithError(err error) *BusinessError {
 	e.Err = err
 	return e
+}
+
+func (e *BusinessError) WithHTTPStatus(status int) *BusinessError {
+	e.StatusCode = status
+	return e
+}
+
+func AsBusinessError(err error, target **BusinessError) bool {
+	if be, ok := err.(*BusinessError); ok {
+		*target = be
+		return true
+	}
+	return false
 }
