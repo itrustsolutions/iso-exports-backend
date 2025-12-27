@@ -13,27 +13,29 @@ import (
 	"github.com/jackc/pgx/v5/pgxpool"
 )
 
-type UsersHTTP struct {
+type UsersRouter struct {
 	usersApplication *app.UsersApp
 	pool             *pgxpool.Pool
+	r                *chi.Mux
 }
 
-func NewUsersHTTP(usersApp *app.UsersApp, pool *pgxpool.Pool) *UsersHTTP {
-	return &UsersHTTP{
+func NewUsersRouter(usersApp *app.UsersApp, pool *pgxpool.Pool, r *chi.Mux) *UsersRouter {
+	return &UsersRouter{
 		usersApplication: usersApp,
 		pool:             pool,
+		r:                r,
 	}
 }
 
-func (ur *UsersHTTP) Routes() http.Handler {
+func (ur *UsersRouter) Routes() http.Handler {
 	r := chi.NewRouter()
 
-	r.Post("/", middleware.MakeHandler(ur.createUserHandler))
+	r.Post("/", middleware.MakeHandler(ur.postCreateUserHandler))
 
 	return r
 }
 
-func (ur *UsersHTTP) createUserHandler(
+func (ur *UsersRouter) postCreateUserHandler(
 	w http.ResponseWriter, r *http.Request,
 ) (*middleware.SuccessResult, error) {
 	input := &identitydtos.CreateUserInput{}

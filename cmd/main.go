@@ -25,14 +25,15 @@ func main() {
 	}
 	defer pool.Close()
 
-	identityModule := identity.NewModule(&identity.Config{
-		DB: pool,
-	})
-
 	r := chi.NewRouter()
 
 	r.Use(middleware.CorrelationID)
-	r.Mount("/identity/users", identityModule.Routes)
+
+	identity.NewModule(&identity.Config{
+		DB:       pool,
+		Router:   r,
+		HTTPPath: "/identity",
+	})
 
 	if err := http.ListenAndServe(config.Server.Port, r); err != nil {
 		fmt.Fprintln(os.Stderr, "Could not set up HTTP server:", err)
