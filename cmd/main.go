@@ -10,6 +10,7 @@ import (
 	application "github.com/itrustsolutions/iso-exports-backend/cmd/internal"
 	"github.com/itrustsolutions/iso-exports-backend/core/identity"
 	"github.com/itrustsolutions/iso-exports-backend/utils/config"
+	"github.com/itrustsolutions/iso-exports-backend/utils/logger"
 	"github.com/itrustsolutions/iso-exports-backend/utils/middleware"
 )
 
@@ -25,9 +26,16 @@ func main() {
 	}
 	defer pool.Close()
 
+	logger, err := logger.Initialize()
+	if err != nil {
+		fmt.Fprintln(os.Stderr, "Could not set up logger:", err)
+		os.Exit(1)
+	}
+
 	r := chi.NewRouter()
 
 	r.Use(middleware.CorrelationID)
+	r.Use(middleware.RequestLoggingMiddleware(logger))
 	r.Use(middleware.Recovery)
 
 	identity.NewModule(&identity.Config{

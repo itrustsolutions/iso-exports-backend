@@ -6,6 +6,7 @@ import (
 	db "github.com/itrustsolutions/iso-exports-backend/core/identity/internal/db/gen"
 	"github.com/itrustsolutions/iso-exports-backend/core/identity/internal/domain"
 	httppresentation "github.com/itrustsolutions/iso-exports-backend/core/identity/internal/presentation/http"
+	"github.com/itrustsolutions/iso-exports-backend/utils/middleware"
 	"github.com/jackc/pgx/v5/pgxpool"
 )
 
@@ -33,6 +34,7 @@ func NewModule(cfg *Config) *Module {
 	usersRouter := httppresentation.NewUsersRouter(usersApp, cfg.DB, cfg.Router)
 
 	cfg.Router.Route(cfg.HTTPPath, func(r chi.Router) {
+		r.Use(middleware.WithModuleLogger("Identity"))
 		r.Mount("/users", usersRouter.Routes())
 	})
 
