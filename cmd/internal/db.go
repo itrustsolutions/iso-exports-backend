@@ -3,14 +3,16 @@ package application
 import (
 	"context"
 	"fmt"
-	"log"
 	"time"
 
 	"github.com/itrustsolutions/iso-exports-backend/utils/config"
+	customcontext "github.com/itrustsolutions/iso-exports-backend/utils/context"
 	"github.com/jackc/pgx/v5/pgxpool"
 )
 
 func DbSetup(ctx context.Context) (*pgxpool.Pool, error) {
+	logger := customcontext.ExtractLogger(ctx)
+
 	config := config.GetConfigOrExist()
 
 	// Connection string
@@ -26,19 +28,23 @@ func DbSetup(ctx context.Context) (*pgxpool.Pool, error) {
 	// Create a connection pool
 	pool, err := pgxpool.New(ctx, dsn)
 	if err != nil {
-		return nil, fmt.Errorf("Failed to create connection pool")
+		return nil, fmt.Errorf("failed to create connection pool")
 	}
 
+	var retries = 0
 	// Wait for the database to be ready
 	for {
 		err = pool.Ping(ctx)
 		if err == nil {
 			break
 		}
-		log.Printf("DB not ready: %v\n", err)
+
+		logger.Warn().Err(err).Msg("database not ready, retrying after 2 seconds..." + fmt.Sprintf("(attempt %d)", retries+1))
+
+		retries++
 		time.Sleep(2 * time.Second)
 	}
 
-	log.Println("Database is ready")
+	logger.Info().Msg("database is ready")
 	return pool, nil
 }
