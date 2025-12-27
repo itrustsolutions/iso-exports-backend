@@ -25,6 +25,7 @@ type ErrorResponse struct {
 
 func NewErrorResponse(ctx context.Context, err error) *StandardResponse {
 	correlationId := customcontext.ExtractCorrelationId(ctx)
+	logger := customcontext.ExtractLogger(ctx)
 
 	var code, message string
 	var details map[string]interface{}
@@ -40,23 +41,43 @@ func NewErrorResponse(ctx context.Context, err error) *StandardResponse {
 		if status == 0 {
 			status = http.StatusBadRequest
 		}
+
+		// Log business error as warning
+		if logger != nil {
+			logger.Warn().
+				Str("error_type", "business_error").
+				Str("error_code", code).
+				Str("error_message", message).
+				Int("status", status).
+				Interface("details", details).
+				Msg("business error occurred")
+		}
 	} else {
 		// Technical error
 		var te *technicalerrors.TechnicalError
-		if ok := technicalerrors.AsTechnicalError(err, &te); ok {
-			code = te.Code
-			message = te.Message
-			details = te.Details
-			status = te.StatusCode
-			if status == 0 {
-				status = http.StatusInternalServerError
-			}
-		} else {
+		ok := technicalerrors.AsTechnicalError(err, &te)
+		if !ok {
 			// Fallback for unknown errors
-			code = "INTERNAL_SERVER_ERROR"
-			message = "An unexpected error occurred"
-			details = map[string]interface{}{"error": err.Error()}
+			te = technicalerrors.NewTechnicalError(technicalerrors.ErrCodeInternalServerError, "Ops! Something went wrong.")
+		}
+
+		code = te.Code
+		message = te.Message
+		details = te.Details
+		status = te.StatusCode
+		if status == 0 {
 			status = http.StatusInternalServerError
+		}
+
+		// Log technical error
+		if logger != nil {
+			logger.Error().
+				Str("error_type", "technical_error").
+				Str("error_code", code).
+				Str("error_message", message).
+				Int("status", status).
+				Interface("details", details).
+				Msg("technical error occurred")
 		}
 	}
 
