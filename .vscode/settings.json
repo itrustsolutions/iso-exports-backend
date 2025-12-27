@@ -27,6 +27,7 @@
     "technicalerrors",
     "testdata",
     "tmpl",
-    "tracelog"
+    "tracelog",
+    "zerolog"
   ]
 }
