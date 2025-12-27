@@ -28,6 +28,7 @@ func main() {
 	r := chi.NewRouter()
 
 	r.Use(middleware.CorrelationID)
+	r.Use(middleware.Recovery)
 
 	identity.NewModule(&identity.Config{
 		DB:       pool,
