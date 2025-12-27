@@ -7,6 +7,7 @@ import (
 
 	"github.com/itrustsolutions/iso-exports-backend/utils/config"
 	customcontext "github.com/itrustsolutions/iso-exports-backend/utils/context"
+	db "github.com/itrustsolutions/iso-exports-backend/utils/db"
 	"github.com/jackc/pgx/v5/pgxpool"
 )
 
@@ -25,8 +26,15 @@ func DbSetup(ctx context.Context) (*pgxpool.Pool, error) {
 		config.Database.SSLMode,
 	)
 
-	// Create a connection pool
-	pool, err := pgxpool.New(ctx, dsn)
+	// Parse configuration to enable pgx tracer and create a connection pool
+	conf, err := pgxpool.ParseConfig(dsn)
+	if err != nil {
+		return nil, fmt.Errorf("failed to parse db config")
+	}
+	// Attach the custom pgx query tracer
+	conf.ConnConfig.Tracer = db.NewPgxQueryTracer()
+
+	pool, err := pgxpool.NewWithConfig(ctx, conf)
 	if err != nil {
 		return nil, fmt.Errorf("failed to create connection pool")
 	}

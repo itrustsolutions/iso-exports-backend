@@ -9,8 +9,10 @@ import (
 	"github.com/go-chi/chi/v5"
 	application "github.com/itrustsolutions/iso-exports-backend/cmd/internal"
 	"github.com/itrustsolutions/iso-exports-backend/core/identity"
+	identitydtos "github.com/itrustsolutions/iso-exports-backend/core/identity/pkg/dtos"
 	"github.com/itrustsolutions/iso-exports-backend/utils/config"
 	customcontext "github.com/itrustsolutions/iso-exports-backend/utils/context"
+	"github.com/itrustsolutions/iso-exports-backend/utils/db"
 	"github.com/itrustsolutions/iso-exports-backend/utils/logger"
 	"github.com/itrustsolutions/iso-exports-backend/utils/middleware"
 )
@@ -43,11 +45,23 @@ func main() {
 	r.Use(middleware.RequestLoggingMiddleware(logger))
 	r.Use(middleware.Recovery)
 
-	identity.NewModule(&identity.Config{
+	identityModule := identity.NewModule(&identity.Config{
 		DB:       pool,
 		Router:   r,
 		HTTPPath: "/identity",
 	})
+
+	user, err := db.ExecWithinTx(ctx, pool, func(txCtx context.Context) (*identitydtos.CreateUserResult, error) {
+		return identityModule.Users.CreateUser(ctx, &identitydtos.CreateUserInput{
+			Username:        "test",
+			Email:           "test@example.com",
+			PlainPassword:   "password",
+			IsActive:        true,
+			HasSystemAccess: true,
+		})
+	})
+
+	fmt.Printf("User: %v\n", user)
 
 	go func() {
 		if err := http.ListenAndServe(config.Server.Port, r); err != nil {
@@ -56,7 +70,7 @@ func main() {
 		}
 	}()
 
-	mainLogger.Info().Msg("server is running on port " + config.Server.Port)
+	mainLogger.Info().Msg("http server is running on port " + config.Server.Port)
 
 	select {}
 }

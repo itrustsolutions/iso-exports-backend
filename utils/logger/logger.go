@@ -20,7 +20,7 @@ func Initialize() (zerolog.Logger, error) {
 		}
 		logger = zerolog.New(output).With().Timestamp().Logger()
 	} else {
-		// Standard JSON for production
+		zerolog.SetGlobalLevel(zerolog.InfoLevel)
 		zerolog.TimeFieldFormat = zerolog.TimeFormatUnix
 		logger = zerolog.New(os.Stdout).With().Timestamp().Logger()
 	}
