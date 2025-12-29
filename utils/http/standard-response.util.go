@@ -55,29 +55,40 @@ func NewErrorResponse(ctx context.Context, err error) *StandardResponse {
 	} else {
 		// Technical error
 		var te *technicalerrors.TechnicalError
-		ok := technicalerrors.AsTechnicalError(err, &te)
-		if !ok {
-			// Fallback for unknown errors
-			te = technicalerrors.NewTechnicalError(technicalerrors.ErrCodeInternalServerError, "Ops! Something went wrong.")
-		}
+		if technicalerrors.AsTechnicalError(err, &te) {
+			// Always show generic message & don't expose details, but respect status code
+			code = technicalerrors.ErrCodeInternalServerError
+			message = "Ops! Something went wrong."
+			details = nil
+			status = te.StatusCode
+			if status == 0 {
+				status = http.StatusInternalServerError
+			}
 
-		code = te.Code
-		message = te.Message
-		details = te.Details
-		status = te.StatusCode
-		if status == 0 {
+			// Log technical error
+			if logger != nil {
+				logger.Error().
+					Str("error_type", "technical_error").
+					Str("error_code", te.Code). // Log actual error code for technical errors
+					Str("error_message", te.Message).
+					Int("status", te.StatusCode).
+					Interface("details", te.Details).
+					Msg("technical error occurred")
+			}
+		} else {
+			// Unknown error: log warning, generic message
+			code = technicalerrors.ErrCodeInternalServerError
+			message = "Ops! Something went wrong."
+			details = nil
 			status = http.StatusInternalServerError
-		}
 
-		// Log technical error
-		if logger != nil {
-			logger.Error().
-				Str("error_type", "technical_error").
-				Str("error_code", code).
-				Str("error_message", message).
-				Int("status", status).
-				Interface("details", details).
-				Msg("technical error occurred")
+			if logger != nil {
+				logger.Warn().
+					Str("error_type", "unknown_error").
+					Str("error_message", err.Error()).
+					Int("status", status).
+					Msg("unknown error occurred")
+			}
 		}
 	}
 
