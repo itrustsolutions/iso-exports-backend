@@ -3,13 +3,11 @@ package main
 import (
 	"context"
 	"fmt"
-	"net/http"
 	"os"
 	"os/signal"
 	"syscall"
 	"time"
 
-	"github.com/go-chi/chi/v5"
 	application "github.com/itrustsolutions/iso-exports-backend/cmd/internal"
 	"github.com/itrustsolutions/iso-exports-backend/core/identity"
 	identitydtos "github.com/itrustsolutions/iso-exports-backend/core/identity/pkg/dtos"
@@ -17,22 +15,18 @@ import (
 	customcontext "github.com/itrustsolutions/iso-exports-backend/utils/context"
 	"github.com/itrustsolutions/iso-exports-backend/utils/db"
 	"github.com/itrustsolutions/iso-exports-backend/utils/logger"
-	"github.com/itrustsolutions/iso-exports-backend/utils/middleware"
 )
 
 func main() {
-	config := config.GetConfigOrExist()
-
+	cfg := config.GetConfigOrExist()
 	ctx := context.Background()
 
-	logger, err := logger.Initialize()
+	log, err := logger.Initialize()
 	if err != nil {
-		fmt.Fprintln(os.Stderr, "Could not set up logger:", err)
+		fmt.Fprintln(os.Stderr, "could not set up logger:", err)
 		os.Exit(1)
 	}
-
-	mainLogger := logger.With().Str("correlation", "background").Logger()
-
+	mainLogger := log.With().Str("correlation", "background").Logger()
 	ctx = customcontext.WithLogger(ctx, &mainLogger)
 
 	pool, err := application.DbSetup(ctx)
@@ -42,11 +36,7 @@ func main() {
 	}
 	defer pool.Close()
 
-	r := chi.NewRouter()
-
-	r.Use(middleware.CorrelationID)
-	r.Use(middleware.RequestLoggingMiddleware(logger))
-	r.Use(middleware.Recovery)
+	r := application.NewRouter(log)
 
 	identityModule := identity.NewModule(&identity.Config{
 		DB:       pool,
@@ -63,39 +53,30 @@ func main() {
 			HasSystemAccess: true,
 		})
 	})
-
 	fmt.Printf("user: %v\n", user)
 
-	srv := &http.Server{
-		Addr:    config.Server.Port,
-		Handler: r,
-	}
+	server := application.NewHTTPServer(cfg.Server.Port, r)
 
-	// Channel to listen for interrupt or terminate signals
 	stop := make(chan os.Signal, 1)
 	signal.Notify(stop, os.Interrupt, syscall.SIGTERM)
 
 	go func() {
-		if err := srv.ListenAndServe(); err != nil && err != http.ErrServerClosed {
-			logger.Error().Err(err).Msg("could not set up HTTP server")
+		if err := server.Start(); err != nil && err.Error() != "http: server closed" {
+			mainLogger.Error().Err(err).Msg("could not set up http server")
 			os.Exit(1)
 		}
 	}()
+	mainLogger.Info().Msg("http server is running on port " + cfg.Server.Port)
 
-	mainLogger.Info().Msg("http server is running on port " + config.Server.Port)
-
-	<-stop // Wait for signal
+	<-stop
 	mainLogger.Info().Msg("shutdown signal received")
 
-	// Define graceful shutdown timeout
-	const shutdownTimeout = 30 // seconds
-
-	// Create context with timeout for graceful shutdown
-	shutdownCtx, cancel := context.WithTimeout(context.Background(), shutdownTimeout*time.Second)
+	const shutdownTimeout = 30 * time.Second
+	shutdownCtx, cancel := context.WithTimeout(context.Background(), shutdownTimeout)
 	defer cancel()
 
 	mainLogger.Info().Msg("shutting down http server gracefully...")
-	if err := srv.Shutdown(shutdownCtx); err != nil {
+	if err := server.Shutdown(shutdownCtx); err != nil {
 		mainLogger.Error().Err(err).Msg("http server forced to shutdown")
 	} else {
 		mainLogger.Info().Msg("http server shutdown complete")

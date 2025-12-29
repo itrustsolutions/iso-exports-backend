@@ -1,23 +1,29 @@
 package application
 
 import (
-	"fmt"
+	"context"
 	"net/http"
 
 	"github.com/go-chi/chi/v5"
-	"github.com/itrustsolutions/iso-exports-backend/utils/config"
 )
 
-func HTTPSetup() (*chi.Mux, error) {
-	config := config.GetConfigOrExist()
+type HTTPServer struct {
+	Server *http.Server
+}
 
-	r := chi.NewRouter()
-
-	err := http.ListenAndServe(config.Server.Port, r)
-
-	if err != nil {
-		return nil, fmt.Errorf("HTTP server failed to start: %w", err)
+func NewHTTPServer(addr string, handler *chi.Mux) *HTTPServer {
+	return &HTTPServer{
+		Server: &http.Server{
+			Addr:    addr,
+			Handler: handler,
+		},
 	}
+}
 
-	return r, nil
+func (s *HTTPServer) Start() error {
+	return s.Server.ListenAndServe()
+}
+
+func (s *HTTPServer) Shutdown(ctx context.Context) error {
+	return s.Server.Shutdown(ctx)
 }
