@@ -5,6 +5,9 @@ import (
 	"fmt"
 	"net/http"
 	"os"
+	"os/signal"
+	"syscall"
+	"time"
 
 	"github.com/go-chi/chi/v5"
 	application "github.com/itrustsolutions/iso-exports-backend/cmd/internal"
@@ -61,10 +64,19 @@ func main() {
 		})
 	})
 
-	fmt.Printf("User: %v\n", user)
+	fmt.Printf("user: %v\n", user)
+
+	srv := &http.Server{
+		Addr:    config.Server.Port,
+		Handler: r,
+	}
+
+	// Channel to listen for interrupt or terminate signals
+	stop := make(chan os.Signal, 1)
+	signal.Notify(stop, os.Interrupt, syscall.SIGTERM)
 
 	go func() {
-		if err := http.ListenAndServe(config.Server.Port, r); err != nil {
+		if err := srv.ListenAndServe(); err != nil && err != http.ErrServerClosed {
 			logger.Error().Err(err).Msg("could not set up HTTP server")
 			os.Exit(1)
 		}
@@ -72,5 +84,24 @@ func main() {
 
 	mainLogger.Info().Msg("http server is running on port " + config.Server.Port)
 
-	select {}
+	<-stop // Wait for signal
+	mainLogger.Info().Msg("shutdown signal received")
+
+	// Define graceful shutdown timeout
+	const shutdownTimeout = 30 // seconds
+
+	// Create context with timeout for graceful shutdown
+	shutdownCtx, cancel := context.WithTimeout(context.Background(), shutdownTimeout*time.Second)
+	defer cancel()
+
+	mainLogger.Info().Msg("shutting down http server gracefully...")
+	if err := srv.Shutdown(shutdownCtx); err != nil {
+		mainLogger.Error().Err(err).Msg("http server forced to shutdown")
+	} else {
+		mainLogger.Info().Msg("http server shutdown complete")
+	}
+
+	mainLogger.Info().Msg("closing database pool...")
+	pool.Close()
+	mainLogger.Info().Msg("database pool closed")
 }
